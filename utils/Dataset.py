@@ -1,5 +1,5 @@
 from __future__ import print_function, division
-import os
+import os, sys
 import torch
 from skimage import io, transform
 import numpy as np
@@ -32,23 +32,23 @@ class Data(Dataset):
         ''' get an item in the data, either a whole sequence or a single frame
          returns 2 tensors, the sequence(or frame) and the labels
          '''
-        data, sequencen,num= [], "", None
-        if type(index) is list:
+        data, sequence,num= [], "", None
+        if type(index) is list:# if it's a single frame we have [name of the sequence , number the frame]
             sequence, num = index[0], index[1]
-        else:
+        else: # else it's just the name of the sequence
             sequence = index
-        sequence = os.path.join(self.root_dir, sequence+ ".h5")
-        for i in range(4):
+        sequence = os.path.join(self.root_dir, sequence+ ".h5") # the name of the file
+        for i in range(4):# all the dimensions
             with h5py.File(sequence, 'r') as f:
-                if num:
-                    data.append(f['ch{}'.format(i)][num])
+                if num: # if there is a frame number , meaning that it's frame by frame
+                    data.append(f['ch{}'.format(i)][num]) #we return the frame/ its label
                     label = f['label'][num]
-                else:
+                else:# if it's a whole sequence
                     data.append(f['ch{}'.format(i)][()])
                     label = f['label'][()]
-        data = np.stack((data[0], data[1], data[2], data[3]), axis=-1)
-        if self.transform:
-            data, label = self.transform((data, label))
+        data = np.stack((data[0], data[1], data[2], data[3]), axis=-1) # make it a 4d image, works wether sequence or frame
+        if self.transform: 
+            data, label = self.transform((data, label))# make the necessary transformations
         return data, label
         
     def get(self, gesture , session, instance):
@@ -67,7 +67,7 @@ class Data(Dataset):
         """
         if not frames and already_defined:
             train, test = [], []
-            with open("partitions/file_half.json") as f:#get the defined train set 
+            with open("../partitions/file_half.json") as f:#get the defined train set 
                 train = json.load(f)["train"]
             for i in os.listdir(self.root_dir): # put the rest of the files in the test set
                 if i[:-3] not in train:
@@ -78,18 +78,20 @@ class Data(Dataset):
             shuffle(data)#shuffle them 
             return data[: int(percentage * len(data) * use)],data[int(percentage * len(data)*use): ]
         elif frames:
-            if not os.path.exists('partitions/all_frames.json'):#if the list of all the image isn't created
+            if not os.path.exists('../partitions/all_frames.json'):#if the list of all the image isn't created
+                print("building the frames index")
                 all_frames = []
                 for i in os.listdir(self.root_dir):
+                    # we go through all the sequences and create a list of all [sequence,frame]
                     with h5py.File(self.root_dir+ i, 'r') as f:
                         length = len(f['ch{}'.format(0)][()])
                         all_frames.extend([ (i[:-3],j) for j in  list(range(length))])
-                with open('partitions/all_frames.json', 'w') as outfile:
-                    json.dump({"data" : all_frames}, outfile)
+                with open('../partitions/all_frames.json', 'w') as outfile:
+                    json.dump({"data" : all_frames}, outfile)# we dump it in a json file 
             
             #open the set of frames, shuffle them and return the train test plit
             data = []
-            with open('partitions/all_frames.json', 'r') as infile:
+            with open('../partitions/all_frames.json', 'r') as infile:
                 data = json.load(infile)["data"]
             shuffle(data)
             return data[: int(percentage * len(data)*use)],data[int(percentage * len(data)*use): ]
