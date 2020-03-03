@@ -29,6 +29,9 @@ class Data(Dataset):
         self.transform = transform
 
     def __getitem__(self, index):
+        ''' get an item in the data, either a whole sequence or a single frame
+         returns 2 tensors, the sequence(or frame) and the labels
+         '''
         data, sequencen,num= [], "", None
         if type(index) is list:
             sequence, num = index[0], index[1]
@@ -49,13 +52,16 @@ class Data(Dataset):
         return data, label
         
     def get(self, gesture , session, instance):
+        # function to retrieve a sequence 
         return self.__getitem__(str(gesture) + "_" + str(session) + "_"+ str(instance))
-    def split(self, frames = False, already_defined = True, percentage = 0.5):
+    def split(self, frames = False, already_defined = False, percentage = 0.5,
+              use = 1):
         """
         args : 
             frames: boolean, returns sets of (sequence, image number) if true, sets of sequences if false
             already_defined : returns the predefined train set if true, random if false
             percentage : percentage of the data in the train set
+            use : percentage of used data, set to 100% by default, only applicable for already_defined set to False
         return train and test sets
             
         """
@@ -70,7 +76,7 @@ class Data(Dataset):
         elif not frames and not already_defined:
             data = list(map(lambda x : x[:-3] , os.listdir(self.root_dir)))#take all the sequences
             shuffle(data)#shuffle them 
-            return data[: int(percentage * len(data))],data[int(percentage * len(data)): ]
+            return data[: int(percentage * len(data) * use)],data[int(percentage * len(data)*use): ]
         elif frames:
             if not os.path.exists('partitions/all_frames.json'):#if the list of all the image isn't created
                 all_frames = []
@@ -86,10 +92,13 @@ class Data(Dataset):
             with open('partitions/all_frames.json', 'r') as infile:
                 data = json.load(infile)["data"]
             shuffle(data)
-            return data[: int(percentage * len(data))],data[int(percentage * len(data)): ]
+            return data[: int(percentage * len(data)*use)],data[int(percentage * len(data)*use): ]
         
             
 class Reshape(object):
+    '''
+    reshape an image to 32 * 32 
+    '''
     def __call__(self, sample):
         data, label = sample
         if len(data.shape) == 3:# a whole sequence 
@@ -98,6 +107,7 @@ class Reshape(object):
             data = data.reshape((32,32,4))
         return data, label
 class Rescale(object):
+    
     """Rescale the image in a sample to a given size.
 
     Args:
@@ -114,13 +124,15 @@ class Rescale(object):
         if len(data.shape) == 4: # if sequence
             data = transform.resize(data, (data.shape[0], newH, newW, data.shape[3]))
         else:# if single frame
-            data = transform.resize(data, (newH, newW, data.shape[3]))
+            data = transform.resize(data, (newH, newW, data.shape[2]))
 
         return data, label
 
 
 class ToTensor(object):
-    """reshapes ndarrays in sample to Tensors."""
+    """transposes ndarrays in sample to Tensors.
+        and transforms them to tensors
+    """
 
     def __call__(self, sample):
         data, label= sample
