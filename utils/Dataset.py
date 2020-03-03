@@ -8,7 +8,6 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 import h5py
 import json
-from random import shuffle
 
 
 
@@ -18,7 +17,7 @@ class Data(Dataset):
     gesture frame dataset.
     """
 
-    def __init__(self, root_dir, transform=None):
+    def __init__(self, root_dir, partition, transform=None):
         """
         Args:
             root_dir (string): Directory with all the h5 sequences.
@@ -26,21 +25,23 @@ class Data(Dataset):
                 on a sample.
         """
         self.root_dir = root_dir
+        self.partition = partition
         self.transform = transform
-
+    def __len__(self):
+        return len(self.partition)
     def __getitem__(self, index):
         ''' get an item in the data, either a whole sequence or a single frame
          returns 2 tensors, the sequence(or frame) and the labels
          '''
         data, sequence,num= [], "", None
-        if type(index) is list:# if it's a single frame we have [name of the sequence , number the frame]
-            sequence, num = index[0], index[1]
+        if type(self.partition[index]) is list:# if it's a single frame we have [name of the sequence , number the frame]
+            sequence, num = self.partition[index][0], self.partition[index][1]
         else: # else it's just the name of the sequence
-            sequence = index
+            sequence = self.partition[index]
         sequence = os.path.join(self.root_dir, sequence+ ".h5") # the name of the file
         for i in range(4):# all the dimensions
             with h5py.File(sequence, 'r') as f:
-                if num: # if there is a frame number , meaning that it's frame by frame
+                if num!= None: # if there is a frame number , meaning that it's frame by frame
                     data.append(f['ch{}'.format(i)][num]) #we return the frame/ its label
                     label = f['label'][num]
                 else:# if it's a whole sequence
@@ -54,48 +55,7 @@ class Data(Dataset):
     def get(self, gesture , session, instance):
         # function to retrieve a sequence 
         return self.__getitem__(str(gesture) + "_" + str(session) + "_"+ str(instance))
-    def split(self, frames = False, already_defined = False, percentage = 0.5,
-              use = 1):
-        """
-        args : 
-            frames: boolean, returns sets of (sequence, image number) if true, sets of sequences if false
-            already_defined : returns the predefined train set if true, random if false
-            percentage : percentage of the data in the train set
-            use : percentage of used data, set to 100% by default, only applicable for already_defined set to False
-        return train and test sets
-            
-        """
-        if not frames and already_defined:
-            train, test = [], []
-            with open("../partitions/file_half.json") as f:#get the defined train set 
-                train = json.load(f)["train"]
-            for i in os.listdir(self.root_dir): # put the rest of the files in the test set
-                if i[:-3] not in train:
-                    test.append(i[:-3])
-            return train, test
-        elif not frames and not already_defined:
-            data = list(map(lambda x : x[:-3] , os.listdir(self.root_dir)))#take all the sequences
-            shuffle(data)#shuffle them 
-            return data[: int(percentage * len(data) * use)],data[int(percentage * len(data)*use): ]
-        elif frames:
-            if not os.path.exists('../partitions/all_frames.json'):#if the list of all the image isn't created
-                print("building the frames index")
-                all_frames = []
-                for i in os.listdir(self.root_dir):
-                    # we go through all the sequences and create a list of all [sequence,frame]
-                    with h5py.File(self.root_dir+ i, 'r') as f:
-                        length = len(f['ch{}'.format(0)][()])
-                        all_frames.extend([ (i[:-3],j) for j in  list(range(length))])
-                with open('../partitions/all_frames.json', 'w') as outfile:
-                    json.dump({"data" : all_frames}, outfile)# we dump it in a json file 
-            
-            #open the set of frames, shuffle them and return the train test plit
-            data = []
-            with open('../partitions/all_frames.json', 'r') as infile:
-                data = json.load(infile)["data"]
-            shuffle(data)
-            return data[: int(percentage * len(data)*use)],data[int(percentage * len(data)*use): ]
-        
+
             
 class Reshape(object):
     '''
@@ -147,5 +107,45 @@ class ToTensor(object):
             data = data.transpose((2,0,1))
         return torch.from_numpy(data),torch.from_numpy(label)
 
-
+def split(root_dir, frames = False, already_defined = False, percentage = 0.5,
+              use = 1):
+        """
+        args : 
+            root_dir : directory where the h5 files are stored
+            frames: boolean, returns sets of (sequence, image number) if true, sets of sequences if false
+            already_defined : returns the predefined train set if true, random if false
+            percentage : percentage of the data in the train set
+            use : percentage of used data, set to 100% by default, only applicable for already_defined set to False
+        return train and test sets
+            
+        """
+        if not frames and already_defined:
+            train, test = [], []
+            with open("../partitions/file_half.json") as f:#get the defined train set 
+                train = json.load(f)["train"]
+            for i in os.listdir(root_dir): # put the rest of the files in the test set
+                if i[:-3] not in train:
+                    test.append(i[:-3])
+            return train, test
+        elif not frames and not already_defined:
+            data = list(map(lambda x : x[:-3] , os.listdir(root_dir)))#take all the sequences
+            return data[: int(percentage * len(data) * use)],data[int(percentage * len(data)*use): ]
+        elif frames:
+            if not os.path.exists('../partitions/all_frames.json'):#if the list of all the image isn't created
+                print("building the frames index")
+                all_frames = []
+                for i in os.listdir(root_dir):
+                    # we go through all the sequences and create a list of all [sequence,frame]
+                    with h5py.File(root_dir+ i, 'r') as f:
+                        length = len(f['ch{}'.format(0)][()])
+                        all_frames.extend([ (i[:-3],j) for j in  list(range(length))])
+                with open('../partitions/all_frames.json', 'w') as outfile:
+                    json.dump({"data" : all_frames}, outfile)# we dump it in a json file 
+            
+            #open the set of frames, return the train test plit
+            data = []
+            with open('../partitions/all_frames.json', 'r') as infile:
+                data = json.load(infile)["data"]
+            return data[: int(percentage * len(data)*use)],data[int(percentage * len(data)*use): ]
+        
 
