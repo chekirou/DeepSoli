@@ -8,6 +8,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 import h5py
 import json
+from random import shuffle
 
 
 
@@ -129,7 +130,8 @@ def split(root_dir, frames = False, already_defined = False, percentage = 0.5,
             return train, test
         elif not frames and not already_defined:
             data = list(map(lambda x : x[:-3] , os.listdir(root_dir)))#take all the sequences
-            return data[: int(percentage * len(data) * use)],data[int(percentage * len(data)*use): ]
+            shuffle(data)
+            return data[: int(percentage * len(data) * use)],data[int(percentage * len(data)*use):int(len(data)*use)]
         elif frames:
             if not os.path.exists('../partitions/all_frames.json'):#if the list of all the image isn't created
                 print("building the frames index")
@@ -146,6 +148,7 @@ def split(root_dir, frames = False, already_defined = False, percentage = 0.5,
             data = []
             with open('../partitions/all_frames.json', 'r') as infile:
                 data = json.load(infile)["data"]
-            return data[: int(percentage * len(data)*use)],data[int(percentage * len(data)*use): ]
+            shuffle(data)
+            return data[: int(percentage * len(data)*use)],data[int(percentage * len(data)*use): int(len(data)*use)]
         
 
