@@ -20,7 +20,7 @@ class Net(nn.Module):
         x = self.pool(fc.relu(self.conv1(x)))
         x = self.pool(fc.relu(self.conv2(x)))
         x = self.pool(fc.relu(self.conv3(x)))
-        x = x.view( 7 * 7 * 128,-1)
+        x = x.view(-1, 7 * 7 * 128)
         x = fc.relu(self.fc1(x))
         x = fc.relu(self.fc2(x))
         x = self.fc3(x)
