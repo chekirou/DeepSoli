@@ -1,0 +1,40 @@
+notes on the SOLI Radar : 
+
+The overall approach behind Soli radar :
+1 - We illuminate the hand with a broad 150 degree radar beam with pulses repeated
+at very high frequency (1-10 kHz)
+2-  The reflected signal is a su-perposition of reflections from multiple dynamic scattering centers that represent dynamic hand configurations.
+3- We then process the received signal into multiple abstract representations (that we call transformations), which allow us to extract various instantaneous and dynamic characteristics of the moving hand and its parts,
+which we call features.
+4- These features are insufficient to reconstruct the skeletal structure of the hand; however, their combinations can
+uniquely identify various hand configurations and motions that we
+can identify by comparing them to a priori captured sets of train-
+ing data using machine learning techniques.
+
+In combination, these
+steps form the Soli Processing Pipeline (Soli PP). In the rest of this
+section we dive into specific details of various parts of the Soli PP.
+
+
+The chip : 
+• A 12×12 mm, FMCW SiGe radar chip manufactured by In-
+fineon using embedded Wafer Level Ball Grid Array (eWLB)
+technology [Brunnbauer et al. 2008].
+• A 9×9 mm, direct-sequence spread spectrum (DSSS) CMOS
+chip manufactured by SiBeam with on-die antennas.
+
+Despite these differences, the Soli radar HAL (Section 4.8) allows us
+to use both chips interchangeably.
+
+The different process technology used in manufacturing the two
+chips (SiGe versus CMOS) results in different signal quality, power
+consumption, and integration capabilities. For example, CMOS
+allows integration of standard digital logic blocks, mixed-signal
+blocks and radar technology on the same die, while SiGe does not.
+The SiGe chip is based on an FMCW modulation scheme common
+in traditional tracking and imaging radars; the CMOS chip utilizes
+binary phase-coded DSSS modulation used in communication. Detailed discussion of the Soli
+radar chip is beyond the scope of this paper; see [Nasr et al. 2015;
+Nasr et al. 2016] for more details of the FMCW radar chip design.
+Below we highlight the main hardware design principles and fea-
+tures critical for gesture sensing applications:

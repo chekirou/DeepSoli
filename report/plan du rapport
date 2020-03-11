@@ -1,0 +1,38 @@
+abstract ?
+
+introduction:
+ -
+
+related work :
+cite the methods already explored (camera based) :
+	- Accurate, robust, and flexible realtime hand tracking
+	- Hand pose estimation and hand shape classification using multi-layered randomized decision forests
+	- In-air gestures around unmodified mobile devices
+	- Digits: Freehand 3D Interactions Anywhere Using a Wrist-Worn Gloveless Sensor
+	- 
+
+cite non camera based solutions :
+	- SoundWave: Using the Doppler effect to sense gestures
+	- MagGetz: Customizable passive tangible controllers on and around conventional mobile devices
+	
+	- 
+
+and focus more on the radar based solutions:
+	- Hand Gesture Recognition Using Micro-Doppler Signatures with Convolutional Neural Network
+	- Latern: Dynamic Continuous Hand Gesture Recognition Using FMCW Radar Sensor
+	- Gesture Recognition for Smart Home Applications using Portable Radar Sensors 
+
+precise why Soli was needed.
+
+the radar : 
+Soli: Ubiquitous gesture sensing with millimeter wave radar
+
+the machine learning models already explored :
+1- Interacting with Soli: Exploring Fine-Grained Dynamic Gesture Recognition in the Radio-Frequency Spectrum
+
+
+
+
+our proposed model:
+
+
