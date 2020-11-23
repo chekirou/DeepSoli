@@ -1,4 +1,0 @@
-- changing the dataset class for it to be faster: done
-- resizing/padding to fixed number of frames : done
-- making an lstm model : in progress
-- 
